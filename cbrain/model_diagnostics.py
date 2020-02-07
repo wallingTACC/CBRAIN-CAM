@@ -82,6 +82,13 @@ class ModelDiagnostics():
         pred = self.model.predict_on_batch(X)
         return X.values, pred
     
+    # tgb - 4/18/2019 - Gets input,prediction and truth in normalized form
+    def get_inp_pred_truth(self,itime):
+        """ Gets input and prediction in normalized form """
+        X, truth = self.valid_gen[itime]
+        pred = self.model.predict_on_batch(X)
+        return X.values, pred, truth.values
+    
     # tgb - 5/20/2019 - Get normalized/full pressure coordinate
     def dP_tilde(self,itime):
         X, truth = self.valid_gen[itime]
