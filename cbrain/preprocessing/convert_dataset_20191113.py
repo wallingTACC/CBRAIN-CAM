@@ -122,6 +122,47 @@ def compute_TfromMA(ds):
 def compute_TfromTS(ds):
     return compute_bp(ds,'TBP')-ds['TS'][1:,:,:]
 
+def compute_TfromNS(ds):
+    return compute_bp(ds,'TBP')-compute_bp(ds,'TBP')[:,-1,:,:]
+
+def compute_LR(ds):
+    
+    C_P = 1.00464e3 # Specific heat capacity of air at constant pressure
+    G = 9.80616 # Gravity constant
+    
+    def PI(PS,P0,hyai,hybi):    
+        S = PS.shape
+        return np.moveaxis(np.tile(P0,(31,S[1],S[2],1)),[0,1,2,3],[1,2,3,0]) *\
+    np.moveaxis(np.tile(hyai,(S[1],S[2],1,1)),[0,1,2,3],[2,3,0,1]) + \
+    np.moveaxis(np.tile(PS.values,(31,1,1,1)),0,1) * \
+    np.moveaxis(np.tile(hybi,(S[1],S[2],1,1)),[0,1,2,3],[2,3,0,1])
+    
+    def rho(qv,T,PS,P0,hyam,hybm):
+        eps = 0.622 # Ratio of molecular weight(H2O)/molecular weight(dry air)
+        R_D = 287 # Specific gas constant of dry air in J/K/k
+
+        r = qv/(qv**0-qv)
+        Tv = T*(r**0+r/eps)/(r**0+r)
+
+        S = Tv.shape
+        p = np.moveaxis(np.tile(P0,(30,S[2],S[3],1)),[0,1,2,3],[1,2,3,0]) *\
+        np.moveaxis(np.tile(hyam,(S[2],S[3],1,1)),[0,1,2,3],[2,3,0,1]) + \
+        np.moveaxis(np.tile(PS.values,(30,1,1,1)),0,1) * \
+        np.moveaxis(np.tile(hybm,(S[2],S[3],1,1)),[0,1,2,3],[2,3,0,1])
+
+        return p/(R_D*Tv)
+    
+    PI_ds = PI(ds['PS'],ds['P0'],ds['hyai'],ds['hybi'])
+    TI_ds = np.concatenate((compute_bp(ds,'TBP'),
+                            np.expand_dims(ds['TS'][1:,:,:],axis=1)),axis=1)
+    RHO_ds = rho(compute_bp(ds,'QBP'),compute_bp(ds,'TBP'),ds['PS'][1:,:,:],
+                 ds['P0'][1:],ds['hyam'][1:,:],ds['hybm'][1:,:])
+    
+    return C_P*RHO_ds.values*(TI_ds[:,1:,:,:]-TI_ds[:,:-1,:,:])/\
+(PI_ds[1:,1:,:,:]-PI_ds[1:,:-1,:,:])*\
+ds['TAP'][1:,:,:,:]**0 # Multiplication by 1 to keep xarray attributes
+# No need for it in custom tf layer
+
 def compute_Carnotmax(ds):
     # tgb - 11/15/2019 - Calculates local Carnot efficiency from Tmin to Tmax = max(T) over z
     TBP = compute_bp(ds,'TBP')
@@ -314,6 +355,12 @@ def create_stacked_da(ds, vars):
             da = compute_CarnotS(ds)
         elif var == 'TfromTS':
             da = compute_TfromTS(ds)
+        elif var == 'TfromNS':
+            da = compute_TfromNS(ds)
+        elif var == 'LR':
+            da = compute_LR(ds)
+        elif var == 'EPTNS':
+            da = compute_EPTNS(ds)
         elif 'dt_adiabatic' in var:
             base_var = var[:-12] + 'AP'
             da = compute_adiabatic(ds, base_var)
