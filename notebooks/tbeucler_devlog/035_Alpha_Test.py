@@ -29,7 +29,8 @@ dict_lay = {'SurRadLayer':SurRadLayer,'MassConsLayer':MassConsLayer,'EntConsLaye
 
 # tgb - 1/7/2020 - Only keeping last alphas that did not have time to run
 #alpha_array = [0,0.01,0.25,0.5,0.75,0.99,1] # Loop over weight given to MSE and conservation constraints
-alpha_array = [0.75,0.99,1]
+#alpha_array = [0.75,0.99,1]
+alpha_array = [0.5]
 for alpha in alpha_array:
     print('alpha = ',str(alpha))
     NN = {}; md = {};
@@ -42,10 +43,10 @@ for alpha in alpha_array:
     md = ModelDiagnostics(NN,config_fn,data_fn)
     
     # 3) Calculate statistics and save in pickle file
-    md.compute_stats()
-    path = TRAINDIR+'HDF5_DATA/NNL'+str(alpha)+'md_test.pkl'
-    pickle.dump(md.stats,open(path,'wb'))
-    print('Stats are saved in ',path)
+#     md.compute_stats()
+#     path = TRAINDIR+'HDF5_DATA/NNL'+str(alpha)+'md_test.pkl'
+#     pickle.dump(md.stats,open(path,'wb'))
+#     print('Stats are saved in ',path)
     
     # 4) Calculate budget residuals and save in pickle file
     md.compute_res()

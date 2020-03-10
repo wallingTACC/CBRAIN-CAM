@@ -1,0 +1,11 @@
+# Wavenumber1-force Walker circulation
+vars : [QBP, QCBP, QIBP, TBP, VBP, PS, SOLIN, SHFLX, LHFLX, PHQ, PHCLDLIQ, PHCLDICE, TPHYSTND, QRL, QRS, DTVKE, FSNT, FSNS, FLNT, FLNS, PRECT, PRECTEND, PRECST, PRECSTEN, Qdt_adiabatic, QCdt_adiabatic, QIdt_adiabatic, Tdt_adiabatic, Vdt_adiabatic]
+
+in_dir : /project/meteo/w2w/A6/S.Rasp/SP-CAM/sp8fbp_3kw1/
+in_fns :  sp8fbp_3kw1.cam2.h2.0000-01-23-00000.nc
+
+out_dir: /local/Tom.Beucler/SPCAM_PHYS/
+out_fn: 8col009_31_train.nc
+
+val_in_fns:  sp8fbp_3kw1.cam2.h2.0001-*-0*-*.nc
+val_out_fn: 8col009_31_valid.nc
