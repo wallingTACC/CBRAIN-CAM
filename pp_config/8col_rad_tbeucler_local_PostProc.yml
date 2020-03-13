@@ -1,6 +1,7 @@
 # Example training configuration file
 exp_name: 000_example
-data_dir: /local/Tom.Beucler/SPCAM_PHYS/
+#data_dir: /local/Tom.Beucler/SPCAM_PHYS/
+data_dir: /DFS-L/DATA/pritchard/tbeucler/SPCAM/SPCAM_PHYS/
 train_fn: 8col009_01_train_shuffle.nc
 valid_fn: 8col009_01_valid.nc
 norm_fn: 8col009_01_norm.nc
@@ -10,7 +11,8 @@ outputs: [PHQ, PHCLDLIQ, PHCLDICE, TPHYSTND, QRL, QRS, DTVKE, FSNT, FSNS, FLNT, 
 
 input_sub: mean
 input_div: maxrs
-output_dict: /home/t/Tom.Beucler/SPCAM/CBRAIN-CAM/nn_config/scale_dicts/009_Wm2_scaling.pkl
+#output_dict: /home/t/Tom.Beucler/SPCAM/CBRAIN-CAM/nn_config/scale_dicts/009_Wm2_scaling.pkl
+output_dict: /export/home/tbeucler/CBRAIN-CAM/nn_config/scale_dicts/009_Wm2_scaling.pkl
 
 hidden_layers: [128, 214]
 epochs: 10
