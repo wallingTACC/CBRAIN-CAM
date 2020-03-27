@@ -1,3 +1,5 @@
+# tgb - 7/3/2019 - Calculates statistics for JUnotC network on +0K and +4K datets
+# tgb - 6/21/2019 - Evaluates Jordan networks on the Wavenumber 1-forced +3K dataset
 # tgb - 6/3/2019 - Calculates statistics on all of Jordan networks
 # tgb - 5/1/2019 - Calculates statistics on NNLA for all datasets
 # tgb - 4/27/2019 - Calculates precipitation PDF for each network on +0K and +4K
@@ -28,11 +30,11 @@ import os
 os.chdir('/filer/z-sv-pool12c/t/Tom.Beucler/SPCAM/CBRAIN-CAM')
 
 config_fn = '/filer/z-sv-pool12c/t/Tom.Beucler/SPCAM/CBRAIN-CAM/pp_config/8col_rad_tbeucler_local_PostProc.yml'
-dict_lay = {'SurRadLayer':SurRadLayer,'MassConsLayer':MassConsLayer,'EntConsLayer':EntConsLayer}
-data_fn_array = ['/local/Tom.Beucler/SPCAM_PHYS/8col009_01_valid.nc',
-                 '/local/Tom.Beucler/SPCAM_PHYS/8col009_14_valid.nc']
+dict_lay = {'SurRadLayer':SurRadLayer,'MassConsLayer':MassConsLayer,'EntConsLayer':EntConsLayer,\
+           'weak_loss_0':mse,'weak_loss_1':mse}
+data_fn_array = ['/local/Tom.Beucler/SPCAM_PHYS/8col009_01_valid.nc','/local/Tom.Beucler/SPCAM_PHYS/8col009_14_valid.nc']
 dataref = ['','4K']
-NNa = ['JNNL','JNNL0.01','JNNC','MLRL0']
+NNa = ['JUnotC']
 
 for i,NNs in enumerate(NNa):
     NN = {}

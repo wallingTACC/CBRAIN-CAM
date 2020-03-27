@@ -20,6 +20,9 @@ RHO_L = 1e3
 import os, pickle
 with open(os.path.join(os.path.dirname(__file__), 'hyai_hybi.pkl'), 'rb') as f:
     hyai, hybi = pickle.load(f)
+# tgb - 1/3/20 - Adding hyam and hybm to define default values at the middle of pressure levels for RH/dRHdt calculations
+with open(os.path.join(os.path.dirname(__file__), 'hyam_hybm.pkl'), 'rb') as f:
+    hyam, hybm = pickle.load(f)
 P = P0*hyai+P0*hybi # Total pressure [Pa]
 P = (P[1:] + P[:-1]) / 2 / 100
 

@@ -23,19 +23,19 @@ import seaborn as sns
 base_dir = os.getcwd().split('CBRAIN-CAM/')[0] + 'CBRAIN-CAM/'
 sys.path.append(f'{base_dir}keras_network/')
 sys.path.append(f'{base_dir}data_processing/')
-from .losses import *
-from .models import PartialReLU, QLayer, ELayer, MasConsLay, EntConsLay, SurRadLay
+from cbrain.losses import *
+from cbrain.models import PartialReLU, QLayer, ELayer
 from tensorflow.keras.utils import get_custom_objects
 metrics_dict = dict([(f.__name__, f) for f in all_metrics])
 get_custom_objects().update(metrics_dict)
-get_custom_objects().update({
-   'PartialReLU': PartialReLU,
-   'QLayer': QLayer,
-   'ELayer': ELayer,
-   'MasConsLay': MasConsLay,
-   'EntConsLay': EntConsLay,
-   'SurRadLay': SurRadLay
-   })
+# get_custom_objects().update({
+#    'PartialReLU': PartialReLU,
+#    'QLayer': QLayer,
+#    'ELayer': ELayer,
+#    'MasConsLay': MasConsLay,
+#    'EntConsLay': EntConsLay,
+#    'SurRadLay': SurRadLay
+#    })
 from os import path
 from configargparse import ArgParser
 #import fire
@@ -60,6 +60,7 @@ def limit_mem():
 #limit_mem()
 
 
-
-with open(os.path.join(os.path.dirname(__file__), 'hyai_hybi.pkl'), 'rb') as f:
+dir_path = os.getcwd()
+print(dir_path)
+with open(os.path.join(dir_path, 'cbrain/hyai_hybi.pkl'), 'rb') as f:
     hyai, hybi = pickle.load(f)

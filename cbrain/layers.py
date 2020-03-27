@@ -5,8 +5,8 @@ Created on 2019-04-03-10-56
 Author: Stephan Rasp, raspstephan@gmail.com
 """
 
-from .imports import *
-from .cam_constants import *
+from cbrain.imports import *
+from cbrain.cam_constants import *
 import tensorflow.keras.backend as K
 from tensorflow.keras.layers import Layer
 
@@ -260,10 +260,190 @@ class EntConsLayer(Layer):
     def compute_output_shape(self, input_shape):
         """Input shape + 1"""
         return (input_shape[0][0], input_shape[0][1] + 1)
+    
+class MassConsLayer_choice(Layer):
+    def __init__(self, inp_sub, inp_div, norm_q, hyai, hybi, lvl_choice, **kwargs):
+        """
+        Call using ([input, output])
+        Assumes
+        prior: [PHQ_nores, PHCLDLIQ, PHCLDICE, TPHYSTND_nores,
+        QRL, QRS, DTVKE, FSNT, FSNS, FLNT, FLNS, PRECT, PRECTEND, PRECST, PRECSTEN]
+        Returns
+        post(erior): [PHQ, PHCLDLIQ, PHCLDICE, TPHYSTND_nores,
+        QRL, QRS, DTVKE, FSNT, FSNS, FLNT, FLNS, PRECT, PRECTEND, PRECST, PRECSTEN]
+        Added lvl_choice, a hyper-parameter to choose the level of mass conservation [0-29]
+        """
+        self.inp_sub, self.inp_div, self.norm_q, self.hyai, self.hybi = \
+            np.array(inp_sub), np.array(inp_div), np.array(norm_q), np.array(hyai), np.array(hybi)
+        self.lvl_choice = np.int32(lvl_choice)
+        # Define variable indices here
+        # Input
+        self.PS_idx = 300
+        self.LHFLX_idx = 303
+        # Output
+        self.PHQbef_idx = slice(0, self.lvl_choice) # Indices before the residual
+        self.PHCLDLIQ_idx = slice(29, 59)
+        self.PHCLDICE_idx = slice(59, 89)
+        self.PRECT_idx = 212
+        self.PRECTEND_idx = 213
+
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        super().build(input_shape)
+
+    def get_config(self):
+        config = {'inp_sub': list(self.inp_sub), 'inp_div': list(self.inp_div),
+                  'norm_q': list(self.norm_q), 'hyai': list(self.hyai),
+                  'hybi': list(self.hybi), 'lvl_choice':self.lvl_choice}
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+    def call(self, arrs):
+        inp, prior = arrs
+
+        # 1. Compute dP_tilde
+        dP_tilde = compute_dP_tilde(
+            inp[:, self.PS_idx],
+            self.inp_div[self.PS_idx], self.inp_sub[self.PS_idx],
+            self.norm_q, self.hyai, self.hybi
+        )
+
+        # 2. Compute vertical cloud water integral
+        CLDINT = K.sum(dP_tilde *
+                       (prior[:, self.PHCLDLIQ_idx] + prior[:, self.PHCLDICE_idx]),
+                       axis=1)
+
+        # 3. Compute water vapor integral minus the water vapor residual
+        # Careful with handling the pressure vector since it is not aligned
+        # with the prior water vapor vector
+        VAPINT = K.sum(dP_tilde[:, self.PHQbef_idx] * prior[:, self.PHQbef_idx], 1) +\
+        K.sum(dP_tilde[:, self.lvl_choice+1:30] * prior[:, self.lvl_choice:29], 1)
+
+        # 4. Compute forcing (see Tom's note for details, I am just copying)
+        LHFLX = (inp[:, self.LHFLX_idx] * self.inp_div[self.LHFLX_idx] +
+                 self.inp_sub[self.LHFLX_idx])
+        PREC = prior[:, self.PRECT_idx] + prior[:, self.PRECTEND_idx]
+
+        # 5. Compute water vapor tendency at level lvl_choice as residual
+        PHQ_LVL = (LHFLX - PREC - CLDINT - VAPINT) / dP_tilde[:, self.lvl_choice]
+
+        # 6. Concatenate output vector
+        post = tf.concat([
+            prior[:, self.PHQbef_idx], PHQ_LVL[:, None],
+            prior[:, self.lvl_choice:]
+        ], axis=1)
+        return post
+
+    def compute_output_shape(self, input_shape):
+        """Input shape + 1"""
+        return (input_shape[0][0], input_shape[0][1] + 1)
+    
+class EntConsLayer_choice(Layer):
+    def __init__(self, inp_sub, inp_div, norm_q, hyai, hybi, lvl_choice, **kwargs):
+        """
+        Call using ([input, output])
+        Assumes
+        prior: [PHQ, PHCLDLIQ, PHCLDICE, TPHYSTND_nores,
+        QRL, QRS, DTVKE, FSNT, FSNS, FLNT, FLNS, PRECT, PRECTEND, PRECST, PRECSTEN]
+        Returns
+        post(erior): [PHQ, PHCLDLIQ, PHCLDICE, TPHYSTND,
+        QRL, QRS, DTVKE, FSNT, FSNS, FLNT, FLNS, PRECT, PRECTEND, PRECST, PRECSTEN]
+        """
+        self.inp_sub, self.inp_div, self.norm_q, self.hyai, self.hybi = \
+            np.array(inp_sub), np.array(inp_div), np.array(norm_q), np.array(hyai), np.array(hybi)
+        self.lvl_choice = np.int32(lvl_choice)
+        # Define variable indices here
+        # Input
+        self.PS_idx = 300
+        self.SHFLX_idx = 302
+        self.LHFLX_idx = 303
+
+        # Output
+        self.PHQ_idx = slice(0, 30)
+        self.PHCLDLIQ_idx = slice(30, 60)
+        self.Tbef_idx = slice(90, 90+self.lvl_choice)
+        self.DTVKE_idx = slice(179, 209)
+        self.FSNT_idx = 209
+        self.FSNS_idx = 210
+        self.FLNT_idx = 211
+        self.FLNS_idx = 212
+        self.PRECT_idx = 213
+        self.PRECTEND_idx = 214
+        self.PRECST_idx = 215
+        self.PRECSTEND_idx = 216
+
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        super().build(input_shape)
+
+    def get_config(self):
+        config = {'inp_sub': list(self.inp_sub), 'inp_div': list(self.inp_div),
+                  'norm_q': list(self.norm_q), 'hyai': list(self.hyai),
+                  'hybi': list(self.hybi), 'lvl_choice': self.lvl_choice}
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+    def call(self, arrs):
+        inp, prior = arrs
+
+        # 1. Compute dP_tilde
+        dP_tilde = compute_dP_tilde(
+            inp[:, self.PS_idx],
+            self.inp_div[self.PS_idx], self.inp_sub[self.PS_idx],
+            self.norm_q, self.hyai, self.hybi
+        )
+
+        # 2. Compute net energy input from phase change and precipitation
+        PHAS = L_I / L_V * (
+                (prior[:, self.PRECST_idx] + prior[:, self.PRECSTEND_idx]) -
+                (prior[:, self.PRECT_idx] + prior[:, self.PRECTEND_idx])
+        )
+
+        # 3. Compute net energy input from radiation, SHFLX and TKE
+        RAD = (prior[:, self.FSNT_idx] - prior[:, self.FSNS_idx] -
+               prior[:, self.FLNT_idx] + prior[:, self.FLNS_idx])
+        SHFLX = (inp[:, self.SHFLX_idx] * self.inp_div[self.SHFLX_idx] +
+                 self.inp_sub[self.SHFLX_idx])
+        KEDINT = K.sum(dP_tilde * prior[:, self.DTVKE_idx], 1)
+
+        # 4. Compute tendency of vapor due to phase change
+        LHFLX = (inp[:, self.LHFLX_idx] * self.inp_div[self.LHFLX_idx] +
+                 self.inp_sub[self.LHFLX_idx])
+        VAPINT = K.sum(dP_tilde * prior[:, self.PHQ_idx], 1)
+        SPDQINT = (VAPINT - LHFLX) * L_S / L_V
+
+        # 5. Same for cloud liquid water tendency
+        SPDQCINT = K.sum(dP_tilde * prior[:, self.PHCLDLIQ_idx], 1) * L_I / L_V
+
+        # 6. And the same for T but remember residual is still missing
+        DTINT = K.sum(dP_tilde[:, :self.lvl_choice] *\
+                      prior[:, self.Tbef_idx], 1) +\
+        K.sum(dP_tilde[:, self.lvl_choice+1:30] *\
+             prior[:, 90+self.lvl_choice:119], 1)
+
+        # 7. Compute DT30 as residual
+        DT_LVL = (
+                       PHAS + RAD + SHFLX + KEDINT - SPDQINT - SPDQCINT - DTINT
+               ) / dP_tilde[:, self.lvl_choice]
+
+        # 8. Concatenate output vector
+        post = tf.concat([
+            prior[:, :(90+self.lvl_choice)], DT_LVL[:, None], \
+            prior[:, (90+self.lvl_choice):]
+        ], axis=1)
+        return post
+
+    def compute_output_shape(self, input_shape):
+        """Input shape + 1"""
+        return (input_shape[0][0], input_shape[0][1] + 1)
 
 
 layer_dict = {
     'SurRadLayer': SurRadLayer,
     'MassConsLayer': MassConsLayer,
-    'EntConsLayer': EntConsLayer
+    'EntConsLayer': EntConsLayer,
+    'MassConsLayer_choice': MassConsLayer_choice,
+    'EntConsLayer_choice': EntConsLayer_choice
 }

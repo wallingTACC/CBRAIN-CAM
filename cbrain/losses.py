@@ -10,16 +10,14 @@ import tensorflow.keras
 #import keras
 import tensorflow.keras.backend as K
 from tensorflow.keras.losses import mse
-from .layers import compute_dP_tilde
-from .imports import *
-import tensorflow.keras.backend as K
-from tensorflow.keras.losses import mse
-from .cam_constants import *
+from cbrain.layers import compute_dP_tilde
+from cbrain.imports import *
+from cbrain.cam_constants import *
 
 
 
 # Define custom losses
-
+# tgb - 5/29/2019 - These losses are old and I am not using them anymore
 def rmse(y_true, y_pred):
     """Regular loss in tensorboard"""
     return K.sqrt(mse(y_true, y_pred))
