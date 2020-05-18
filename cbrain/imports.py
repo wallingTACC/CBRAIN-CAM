@@ -20,9 +20,9 @@ import h5py
 from glob import glob
 import sys, os
 import seaborn as sns
-base_dir = os.getcwd().split('CBRAIN-CAM/')[0] + 'CBRAIN-CAM/'
-sys.path.append(f'{base_dir}keras_network/')
-sys.path.append(f'{base_dir}data_processing/')
+#base_dir = os.getcwd().split('CBRAIN-CAM/')[0] + 'CBRAIN-CAM/'
+#sys.path.append(f'{base_dir}keras_network/')
+#sys.path.append(f'{base_dir}data_processing/')
 from cbrain.losses import *
 from cbrain.models import PartialReLU, QLayer, ELayer
 from tensorflow.keras.utils import get_custom_objects
@@ -44,10 +44,10 @@ from ipykernel.kernelapp import IPKernelApp
 def in_notebook():
     return IPKernelApp.initialized()
 
-if in_notebook():
-    from tqdm import tqdm_notebook as tqdm
-else:
-    from tqdm import tqdm
+#if in_notebook():
+#    from tqdm import tqdm_notebook as tqdm
+#else:
+#    from tqdm import tqdm
 
 import tensorflow as tf
 from tensorflow.python.ops.parallel_for.gradients import jacobian

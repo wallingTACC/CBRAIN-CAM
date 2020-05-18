@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "./tmp_dzt06fi/test.py", line 4, in <module>
+    trial = client.get_trial()
+  File "/home/dwalling/miniconda3/envs/CbrainCustomLayer/lib/python3.6/site-packages/sherpa/database.py", line 222, in get_trial
+    t = next(g)
+  File "/home/dwalling/miniconda3/envs/CbrainCustomLayer/lib/python3.6/site-packages/sherpa/database.py", line 221, in <genexpr>
+    g = (entry for entry in self.db.trials.find({'trial_id': trial_id}))
+  File "/home/dwalling/miniconda3/envs/CbrainCustomLayer/lib/python3.6/site-packages/pymongo/cursor.py", line 1156, in next
+    if len(self.__data) or self._refresh():
+  File "/home/dwalling/miniconda3/envs/CbrainCustomLayer/lib/python3.6/site-packages/pymongo/cursor.py", line 1050, in _refresh
+    self.__session = self.__collection.database.client._ensure_session()
+  File "/home/dwalling/miniconda3/envs/CbrainCustomLayer/lib/python3.6/site-packages/pymongo/mongo_client.py", line 1810, in _ensure_session
+    return self.__start_session(True, causal_consistency=False)
+  File "/home/dwalling/miniconda3/envs/CbrainCustomLayer/lib/python3.6/site-packages/pymongo/mongo_client.py", line 1763, in __start_session
+    server_session = self._get_server_session()
+  File "/home/dwalling/miniconda3/envs/CbrainCustomLayer/lib/python3.6/site-packages/pymongo/mongo_client.py", line 1796, in _get_server_session
+    return self._topology.get_server_session()
+  File "/home/dwalling/miniconda3/envs/CbrainCustomLayer/lib/python3.6/site-packages/pymongo/topology.py", line 485, in get_server_session
+    None)
+  File "/home/dwalling/miniconda3/envs/CbrainCustomLayer/lib/python3.6/site-packages/pymongo/topology.py", line 209, in _select_servers_loop
+    self._error_message(selector))
+pymongo.errors.ServerSelectionTimeoutError: comet-30-12.sdsc.edu:27001: [Errno 111] Connection refused

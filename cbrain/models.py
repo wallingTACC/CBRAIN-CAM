@@ -10,7 +10,7 @@ tgb - 2/7/2019 - Replacing keras with tf.keras to avoid incompatibilities when u
 from cbrain.imports import *
 #import keras
 import tensorflow as tf
-import tensorflow.math as tfm
+from  tensorflow import math as tfm
 import tensorflow.keras
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import *

@@ -4,7 +4,7 @@ tgb - 4/8/2019 - Merged Stephan's re-written conserving layers
 
 """
 import tensorflow as tf
-import tensorflow.math as tfm
+from tensorflow import math as tfm
 import tensorflow.keras
 # tgb - 2/11/2019 - For consistency with eager execution
 #import keras
