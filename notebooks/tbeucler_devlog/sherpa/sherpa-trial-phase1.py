@@ -1,31 +1,25 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# tgb - 4/15/2020
-# - Adapting Ankitesh's notebook that builds and train a "brute-force" network to David Walling's hyperparameter search  
-# - Adding the option to choose between aquaplanet and real-geography data
-
-# In[1]:
-
-
-#get_ipython().run_line_magic('cd', "'/home/dwalling/tbeucler-CBRAIN-CAM'")
+import sys
 import os
-os.chdir('/home/dwalling/tbeucler-CBRAIN-CAM')
+DEV_DIR = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/'
+CONDA_DIR = '/work/00157/walling/conda/envs/CbrainCustomLayer/'
+DATA_DIR = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/notebooks/tbeucler_devlog/sherpa/data/'
+SHERPA_TEMP_DIR = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/notebooks/tbeucler_devlog/sherpa/sherpa-temp/'
+EPOCHS = 10
+#TRAINDIR = DATA_DIR
 
-# In[2]:
+os.chdir(DEV_DIR)
+sys.path.insert(1,CONDA_DIR + "lib/python3.7/site-packages") #work around for h5py
+sys.path.insert(1, DEV_DIR)
+sys.path.insert(1, DEV_DIR + "cbrain")
+sys.path.insert(1, DEV_DIR + "notebooks/tbeucler_devlog")
 
 import sherpa
-client = sherpa.Client(host='localhost', port='27001')
+
+client = sherpa.Client(host='127.0.0.1') #, port='37001')
 trial = client.get_trial()
 
 print(os.environ['SHERPA_RESOURCE'])
 os.environ['CUDA_VISIBLE_DEVICES'] = os.environ['SHERPA_RESOURCE']
-
-import sys
-sys.path.insert(1,"/home/dwalling/miniconda3/envs/CbrainCustomLayer/lib/python3.7/site-packages") #work around for h5py
-sys.path.insert(1, "/home/dwalling/tbeucler-CBRAIN-CAM")
-sys.path.insert(1, "/home/dwalling/tbeucler-CBRAIN-CAM/cbrain")
-sys.path.insert(1, "/home/dwalling/tbeucler-CBRAIN-CAM/notebooks/tbeucler_devlog")
                 
 from cbrain.imports import *
 from cbrain.cam_constants import *
@@ -59,27 +53,23 @@ tf.debugging.set_log_device_placement(True)
 # ## Global Variables
 
 # In[3]:
+#TRAINDIR = '/oasis/scratch/comet/ankitesh/temp_project/PrepData/CRHData/'
+data_path = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/notebooks/tbeucler_devlog/sherpa/data/'
 
 
 # Load coordinates (just pick any file from the climate model run)
-coor = xr.open_dataset("/oasis/scratch/comet/ankitesh/temp_project/data/sp8fbp_minus4k.cam2.h1.0000-01-01-00000.nc",                    decode_times=False)
+coor = xr.open_dataset(data_path + "sp8fbp_minus4k.cam2.h1.0000-01-01-00000.nc", decode_times=False)
 lat = coor.lat; lon = coor.lon; lev = coor.lev;
 coor.close();
 
-
-# In[4]:
-
-
-TRAINDIR = '/oasis/scratch/comet/ankitesh/temp_project/PrepData/CRHData/'
-path = '/home/ankitesh/CBrain_project/CBRAIN-CAM/cbrain/'
-
 # Load hyam and hybm to calculate pressure field in SPCAM
+PATH = DEV_DIR + 'cbrain/'
 path_hyam = 'hyam_hybm.pkl'
-hf = open(path+path_hyam,'rb')
+hf = open(path_hyam,'rb')
 hyam,hybm = pickle.load(hf)
 
 # Scale dictionary to convert the loss to W/m2
-scale_dict = load_pickle('/home/ankitesh/CBrain_project/CBRAIN-CAM/nn_config/scale_dicts/009_Wm2_scaling.pkl')
+scale_dict = load_pickle(data_path + '009_Wm2_scaling_2.pkl')
 
 
 # New Data generator class for the climate-invariant network. Calculates the physical rescalings needed to make the NN climate-invariant
@@ -91,7 +81,7 @@ class DataGeneratorClimInv(DataGenerator):
     
     def __init__(self, data_fn, input_vars, output_vars,
              norm_fn=None, input_transform=None, output_transform=None,
-             batch_size=1024, shuffle=True, xarray=False, var_cut_off=None,
+             batch_size=trial.parameters['batch_size'], shuffle=True, xarray=False, var_cut_off=None,
              rh_trans=True,t2tns_trans=True,
              lhflx_trans=True,
              scaling=True,interpolate=True,
@@ -208,10 +198,17 @@ class DataGeneratorClimInv(DataGenerator):
 # In[6]:
 
 
-path_aquaplanet = '/oasis/scratch/comet/ankitesh/temp_project/PrepData/'
-path_realgeography = '/oasis/scratch/comet/ankitesh/temp_project/PrepData/geography'
+path_aquaplanet = data_path + 'phase1/aquaplanet/'
+path_realgeography = data_path + 'phase1/geography/'
 
-path = path_aquaplanet 
+#path = path_aquaplanet 
+#out_vars_RH = ['PHQ','TPHYSTND','FSNT', 'FSNS', 'FLNT', 'FLNS']
+
+path = path_realgeography
+out_vars_RH = ['PTEQ','PTTEND','FSNT', 'FSNS', 'FLNT', 'FLNS']
+
+out_vars = out_vars_RH
+
 
 
 # ### Data Generator using RH
@@ -219,15 +216,16 @@ path = path_aquaplanet
 # In[7]:
 
 
-scale_dict_RH = load_pickle('/home/ankitesh/CBrain_project/CBRAIN-CAM/nn_config/scale_dicts/009_Wm2_scaling.pkl')
+scale_dict_RH = load_pickle(data_path + '009_Wm2_scaling_2.pkl')
 scale_dict_RH['RH'] = 0.01*L_S/G, # Arbitrary 0.1 factor as specific humidity is generally below 2%
 
 in_vars_RH = ['RH','TBP','PS', 'SOLIN', 'SHFLX', 'LHFLX']
-out_vars_RH = ['PHQ','TPHYSTND','FSNT', 'FSNS', 'FLNT', 'FLNS']
+#out_vars_RH = ['PHQ','TPHYSTND','FSNT', 'FSNS', 'FLNT', 'FLNS']
 
 TRAINFILE_RH = 'CI_RH_M4K_NORM_train_shuffle.nc'
 NORMFILE_RH = 'CI_RH_M4K_NORM_norm.nc'
-VALIDFILE_RH = 'CI_RH_M4K_NORM_valid.nc'
+#VALIDFILE_RH = 'CI_RH_M4K_NORM_valid.nc' # Experiment 1/2
+VALIDFILE_RH = 'CI_RH_P4K_NORM_valid.nc' # Experiment 3/4
 
 
 # In[8]:
@@ -240,7 +238,7 @@ train_gen_RH = DataGenerator(
     norm_fn = path+NORMFILE_RH,
     input_transform = ('mean', 'maxrs'),
     output_transform = scale_dict_RH,
-    batch_size=1024,
+    batch_size=trial.parameters['batch_size'],
     shuffle=True,
 )
 
@@ -251,11 +249,12 @@ train_gen_RH = DataGenerator(
 
 
 in_vars = ['QBP','TfromNS','PS', 'SOLIN', 'SHFLX', 'LHFLX']
-out_vars = ['PHQ','TPHYSTND','FSNT', 'FSNS', 'FLNT', 'FLNS']
+#out_vars = ['PHQ','TPHYSTND','FSNT', 'FSNS', 'FLNT', 'FLNS']
 
 TRAINFILE_TNS = 'CI_TNS_M4K_NORM_train_shuffle.nc'
 NORMFILE_TNS = 'CI_TNS_M4K_NORM_norm.nc'
-VALIDFILE_TNS = 'CI_TNS_M4K_NORM_valid.nc'
+#VALIDFILE_TNS = 'CI_TNS_M4K_NORM_valid.nc' # Experiment 1/2
+VALIDFILE_TNS = 'CI_TNS_P4K_NORM_valid.nc' # Experiment 3/4
 
 
 # In[10]:
@@ -268,7 +267,7 @@ train_gen_TNS = DataGenerator(
     norm_fn = path+NORMFILE_TNS,
     input_transform = ('mean', 'maxrs'),
     output_transform = scale_dict,
-    batch_size=1024,
+    batch_size=trial.parameters['batch_size'],
     shuffle=True,
 )
 
@@ -279,7 +278,7 @@ train_gen_TNS = DataGenerator(
 
 
 in_vars = ['QBP','TBP','PS', 'SOLIN', 'SHFLX', 'LHFLX']
-out_vars = ['PHQ','TPHYSTND','FSNT', 'FSNS', 'FLNT', 'FLNS']
+#out_vars = ['PHQ','TPHYSTND','FSNT', 'FSNS', 'FLNT', 'FLNS']
 
 
 # ## Brute-Force Model
@@ -289,7 +288,8 @@ out_vars = ['PHQ','TPHYSTND','FSNT', 'FSNS', 'FLNT', 'FLNS']
 
 TRAINFILE = 'CI_SP_M4K_train_shuffle.nc'
 NORMFILE = 'CI_SP_M4K_NORM_norm.nc'
-VALIDFILE = 'CI_SP_M4K_valid.nc'
+#VALIDFILE = 'CI_SP_M4K_valid.nc' # Experiment 1/2
+VALIDFILE = 'CI_SP_P4K_valid.nc' # Experiment 3/4
 
 print('Batch Size = ' + str(trial.parameters['batch_size']))
 print('Num Layers = ' + str(trial.parameters['num_layers']))

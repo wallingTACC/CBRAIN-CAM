@@ -79,7 +79,7 @@ dependencies:
   - numpy-base=1.18.1=py36hde5b4d6_1
   - oauthlib=3.1.0=py_0
   - olefile=0.46=py36_0
-  - openssl=1.1.1=h7b6447c_0
+  - openssl
   - opt_einsum=3.1.0=py_0
   - packaging=20.3=py_0
   - partd=1.1.0=py_0

@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+#SBATCH -J jupyter                    # Job name
+#SBATCH -o jupyter.out                # Name of stdout output file (%j expands to jobId)
+#SBATCH -p gtx                      # Queue name
+#SBATCH -N 1                          # Total number of nodes requested (20 cores/node)
+#SBATCH -n 1                          # Total number of mpi tasks requested
+#SBATCH -t 24:00:00                   # Run time (hh:mm:ss) - 4 hours
+#SBATCH -A TACC-DIC 
+#--------------------------------------------------------------------------
+# ---- You normally should not need to edit anything below this point -----
+#--------------------------------------------------------------------------
+
+source ~/.bashrc
+
+export HDF5_USE_FILE_LOCKING=FALSE
+
+module purge
+
+#conda activate tf_gpu
+#conda activate cbrain_env09192019     
+#conda activate cbrain_tf2
+conda activate CbrainCustomLayer
+
+# HDF5 LOCKING
+export HDF5_USE_FILE_LOCKING=FALSE
+
+TB_LOGS=/work/00157/walling/projects/cloud_emulator/Parallel_TF2/logs
+NOTEBOOK_PORT=5590
+TB_PORT=5591
+
+echo job $JOB_ID execution at: `date`
+
+# our node name
+NODE_HOSTNAME=`hostname -s`
+echo "Running on node $NODE_HOSTNAME"
+
+jupyter notebook --no-browser --port $NOTEBOOK_PORT &
+
+sleep 10
+
+tensorboard --logdir=$TB_LOGS --host localhost --port $TB_PORT &
+
+sleep 10
+
+echo "Got login node jupyter port $LOGIN_IPY_PORT"
+
+# create reverse tunnel port to login nodes. 
+ssh -f -g -N -R $NOTEBOOK_PORT:localhost:$NOTEBOOK_PORT $SLURM_SUBMIT_HOST 
+ssh -f -g -N -R $TB_PORT:localhost:$TB_PORT $SLURM_SUBMIT_HOST
+echo "Created reverse ports on $SLURM_SUBMIT_HOST login"
+
+echo "Your jupyter notebook server is now running!"
+USERNAME=`whoami`
+echo "Your SSH tunnel port is $LOGIN_IPY_PORT"
+echo "Open a local SSH tunnel: ssh -L $NOTEBOOK_PORT:localhost:$NOTEBOOK_PORT -L $TB_PORT:localhost:$TB_PORT $USERNAME@$SLURM_SUBMIT_HOST"
+
+sleep 10000000
+
+# spin on .ipython.lock file to keep job alive
+while [ -f $HOME/.ipython.lock ]; do
+  sleep 30
+done
+
+
+# job is done!
+
+# wait a brief moment so ipython can clean up after itself
+sleep 1
+
+echo "Job $SLURM_JOB_ID execution finished at: `date`"

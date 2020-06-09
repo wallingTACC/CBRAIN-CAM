@@ -17,9 +17,12 @@ def runner():
     #                     algorithm=alg,
     #                     lower_is_better=True)
 
-    script = '/home/dwalling/dev/sherpa/sherpa-trial.py'
-    tempdir = '/home/dwalling/dev/sherpa/sherpa-temp'
+    script = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/notebooks/tbeucler_devlog/sherpa/sherpa-trial-phase2.py'
+    tempdir = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/notebooks/tbeucler_devlog/sherpa/sherpa-temp'
 
+    #import time
+    #time.sleep(1000)
+    
     results = sherpa.optimize(parameters=parameters,
                               algorithm=alg,
                               lower_is_better=True,
@@ -28,7 +31,7 @@ def runner():
                               scheduler=scheduler,
                               max_concurrent=4,
                               verbose=1,
-                              mongodb_args={'bind_ip':'localhost', 'port':27001})
+                              mongodb_args={'bind_ip':'0.0.0.0'}) #, 'port':37001})
 
 if __name__=='__main__':
     runner()
