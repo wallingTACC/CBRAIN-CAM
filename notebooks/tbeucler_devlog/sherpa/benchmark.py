@@ -3,7 +3,6 @@ import os
 DEV_DIR = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/'
 CONDA_DIR = '/work/00157/walling/conda/envs/CbrainCustomLayer/'
 DATA_DIR = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/notebooks/tbeucler_devlog/sherpa/data/'
-SHERPA_TEMP_DIR = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/notebooks/tbeucler_devlog/sherpa/sherpa-temp-study1/'
 EPOCHS = 10
 #TRAINDIR = DATA_DIR
 
@@ -13,18 +12,13 @@ sys.path.insert(1, DEV_DIR)
 sys.path.insert(1, DEV_DIR + "cbrain")
 sys.path.insert(1, DEV_DIR + "notebooks/tbeucler_devlog")
 
-import sherpa
-
-client = sherpa.Client(host='127.0.0.1')#, port='37001')
-trial = client.get_trial()
-
-BATCH_SIZE = trial.parameters['batch_size']
-NUM_LAYERS = trial.parameters['num_layers']
-NUM_UNITS = trial.parameters['num_units']
-LEARNING_RATE = trial.parameters['learning_rate']
-DROPOUT_RATE = trial.parameters['dropout_rate']
-LEAKY_RELU_ALPHA = trial.parameters['leaky_relu_alpha']
-BATCH_NORM = trial.parameters['batch_norm']
+BATCH_SIZE = 4096 #trial.parameters['batch_size']
+NUM_LAYERS = 10 #trial.parameters['num_layers']
+NUM_UNITS = 256 #trial.parameters['num_units']
+LEARNING_RATE = 0.001 #trial.parameters['learning_rate']
+DROPOUT_RATE = 0.5 #trial.parameters['dropout_rate']
+LEAKY_RELU_ALPHA = 0.7 #trial.parameters['leaky_relu_alpha']
+BATCH_NORM = 1 #trial.parameters['batch_norm']
 
 print('Batch Size = ' + str(BATCH_SIZE))
 print('Num Layers = ' + str(NUM_LAYERS))
@@ -33,9 +27,6 @@ print('Learning Rate = ' + str(LEARNING_RATE))
 print('Dropout Rate = ' + str(DROPOUT_RATE))
 print('Leaky Relu Alpha = ' + str(LEAKY_RELU_ALPHA))
 print('Batch Norm = ' + str(BATCH_NORM))
-
-print(os.environ['SHERPA_RESOURCE'])
-os.environ['CUDA_VISIBLE_DEVICES'] = os.environ['SHERPA_RESOURCE']
                 
 from cbrain.imports import *
 from cbrain.cam_constants import *
@@ -364,12 +355,9 @@ model.compile(tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE), loss=mse)
 Nep = EPOCHS
 model.summary()
 model.fit_generator(train_gen, epochs=Nep, validation_data=valid_gen, 
-                    callbacks=[client.keras_send_metrics(trial,
-                                                   objective_name='val_loss',
-                                                   context_names=['loss'])
-                              ])
+                    callbacks=[])
 
-model.save(SHERPA_TEMP_DIR + str(trial.id))
+#model.save(SHERPA_TEMP_DIR + str(trial.id))
 
 
 

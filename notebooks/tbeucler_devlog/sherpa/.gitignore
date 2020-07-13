@@ -2,3 +2,6 @@ data
 sherpa-temp*
 *.out
 *.pyc
+study*.log
+sherpa-trial*study*.py
+phase*-study*

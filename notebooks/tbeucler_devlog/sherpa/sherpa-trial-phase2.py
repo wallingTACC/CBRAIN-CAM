@@ -3,7 +3,7 @@ import os
 DEV_DIR = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/'
 CONDA_DIR = '/work/00157/walling/conda/envs/CbrainCustomLayer/'
 DATA_DIR = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/notebooks/tbeucler_devlog/sherpa/data/'
-SHERPA_TEMP_DIR = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/notebooks/tbeucler_devlog/sherpa/sherpa-temp/'
+SHERPA_TEMP_DIR = '/work/00157/walling/projects/cloud_emulator/walling-CBRAIN-CAM/notebooks/tbeucler_devlog/sherpa/sherpa-temp-phase2-study1a/'
 EPOCHS = 10
 #TRAINDIR = DATA_DIR
 
@@ -15,12 +15,27 @@ sys.path.insert(1, DEV_DIR + "notebooks/tbeucler_devlog")
 
 import sherpa
 
-client = sherpa.Client(host='127.0.0.1') #, port='37001')
+client = sherpa.Client(host='127.0.0.1') #, port='47001')
 trial = client.get_trial()
+
+BATCH_SIZE = trial.parameters['batch_size']
+NUM_LAYERS = trial.parameters['num_layers']
+NUM_UNITS = trial.parameters['num_units']
+LEARNING_RATE = trial.parameters['learning_rate']
+DROPOUT_RATE = trial.parameters['dropout_rate']
+LEAKY_RELU_ALPHA = trial.parameters['leaky_relu_alpha']
+BATCH_NORM = trial.parameters['batch_norm']
+
+print('Batch Size = ' + str(BATCH_SIZE))
+print('Num Layers = ' + str(NUM_LAYERS))
+print('Num Units = ' + str(NUM_UNITS))
+print('Learning Rate = ' + str(LEARNING_RATE))
+print('Dropout Rate = ' + str(DROPOUT_RATE))
+print('Leaky Relu Alpha = ' + str(LEAKY_RELU_ALPHA))
+print('Batch Norm = ' + str(BATCH_NORM))
 
 print(os.environ['SHERPA_RESOURCE'])
 os.environ['CUDA_VISIBLE_DEVICES'] = os.environ['SHERPA_RESOURCE']
-
 
 from cbrain.imports import *
 from cbrain.cam_constants import *
@@ -68,7 +83,7 @@ class DataGeneratorClimInv(DataGenerator):
     
     def __init__(self, data_fn, input_vars, output_vars,
              norm_fn=None, input_transform=None, output_transform=None,
-             batch_size=trial.parameters['batch_size'], shuffle=True, xarray=False, var_cut_off=None, 
+             batch_size=BATCH_SIZE, shuffle=True, xarray=False, var_cut_off=None, 
              rh_trans=True,t2tns_trans=True,
              lhflx_trans=True,
              scaling=True,interpolate=True,
@@ -176,11 +191,11 @@ class DataGeneratorClimInv(DataGenerator):
 PATH_aquaplanet = DATA_DIR + 'phase2/aquaplanet/'
 PATH_realgeography = DATA_DIR + 'phase2/geography/'
 
-#PATH = PATH_aquaplanet
-#out_vars_RH = ['PHQ','TPHYSTND','FSNT', 'FSNS', 'FLNT', 'FLNS']
+PATH = PATH_aquaplanet
+out_vars_RH = ['PHQ','TPHYSTND','FSNT', 'FSNS', 'FLNT', 'FLNS']
 
-PATH = PATH_realgeography
-out_vars_RH = ['PTEQ','PTTEND','FSNT', 'FSNS', 'FLNT', 'FLNS']
+#PATH = PATH_realgeography
+#out_vars_RH = ['PTEQ','PTTEND','FSNT', 'FSNS', 'FLNT', 'FLNS']
 
 out_vars = out_vars_RH
 
@@ -215,7 +230,7 @@ train_gen_RH_pos = DataGenerator(
     norm_fn = PATH+NORMFILE_RH,
     input_transform = ('mean', 'maxrs'),
     output_transform = scale_dict_RH,
-    batch_size=trial.parameters['batch_size'],
+    batch_size=BATCH_SIZE,
     shuffle=True
 )
 
@@ -229,7 +244,7 @@ train_gen_RH_neg = DataGenerator(
     norm_fn = PATH+NORMFILE_RH,
     input_transform = ('mean', 'maxrs'),
     output_transform = scale_dict_RH,
-    batch_size=trial.parameters['batch_size'],
+    batch_size=BATCH_SIZE,
     shuffle=True
 )
 
@@ -261,7 +276,7 @@ train_gen_TNS_pos = DataGenerator(
     norm_fn = PATH+NORMFILE_TNS,
     input_transform = ('mean', 'maxrs'),
     output_transform = scale_dict,
-    batch_size=trial.parameters['batch_size'],
+    batch_size=BATCH_SIZE,
     shuffle=True
 )
 
@@ -275,7 +290,7 @@ train_gen_TNS_neg = DataGenerator(
     norm_fn = PATH+NORMFILE_TNS,
     input_transform = ('mean', 'maxrs'),
     output_transform = scale_dict,
-    batch_size=trial.parameters['batch_size'],
+    batch_size=BATCH_SIZE,
     shuffle=True
 )
 
@@ -330,7 +345,7 @@ train_gen_pos = DataGeneratorClimInv(
     norm_fn = PATH+NORMFILE,
     input_transform = ('mean', 'maxrs'),
     output_transform = scale_dict,
-    batch_size=trial.parameters['batch_size'],
+    batch_size=BATCH_SIZE,
     shuffle=True,
     lev=lev,
     hyam=hyam,hybm=hybm,
@@ -346,7 +361,7 @@ valid_gen_pos = DataGeneratorClimInv(
     norm_fn = PATH+NORMFILE,
     input_transform = ('mean', 'maxrs'),
     output_transform = scale_dict,
-    batch_size=trial.parameters['batch_size'],
+    batch_size=BATCH_SIZE,
     shuffle=True,
     lev=lev,
     hyam=hyam,hybm=hybm,
@@ -369,7 +384,7 @@ train_gen_neg = DataGeneratorClimInv(
     norm_fn = PATH+NORMFILE,
     input_transform = ('mean', 'maxrs'),
     output_transform = scale_dict,
-    batch_size=trial.parameters['batch_size'],
+    batch_size=BATCH_SIZE,
     shuffle=True,
     lev=lev,
     hyam=hyam,hybm=hybm,
@@ -386,7 +401,7 @@ valid_gen_neg = DataGeneratorClimInv(
     norm_fn = PATH+NORMFILE,
     input_transform = ('mean', 'maxrs'),
     output_transform = scale_dict,
-    batch_size=trial.parameters['batch_size'],
+    batch_size=BATCH_SIZE,
     shuffle=True,
     lev=lev,
     hyam=hyam,hybm=hybm,
@@ -406,22 +421,24 @@ lev_tilde_before = inp[:,offset:offset+30]
 offset = offset+30
 
 densout = Dense(128, activation='linear')(inp_TNS)
-densout = LeakyReLU(alpha=0.3)(densout)
-for i in range(trial.parameters['num_layers']): #range (6):
+densout = LeakyReLU(alpha=LEAKY_RELU_ALPHA)(densout)
+for i in range(NUM_LAYERS): #range (6):
     #densout = Dense(128, activation='linear')(densout)
-    densout = Dense(trial.parameters['num_units'], activation='linear')(densout)
-    densout = LeakyReLU(alpha=0.3)(densout)
+    densout = Dense(NUM_UNITS, activation='linear')(densout)
+    densout = LeakyReLU(alpha=LEAKY_RELU_ALPHA)(densout)
 denseout = Dense(2*inter_dim_size+4, activation='linear')(densout)
 lev_original_out = reverseInterpLayer(inter_dim_size)([denseout,lev_tilde_before])
 out = ScaleOp(OpType.PWA.value,
               inp_subQ=train_gen_pos.input_transform.sub, 
               inp_divQ=train_gen_pos.input_transform.div,
               )([inp,lev_original_out])
+
+
 model_pos = tf.keras.models.Model(inp, out)
 
 model_pos.summary()
 
-model_pos.compile(tf.keras.optimizers.Adam(), loss=mse)
+model_pos.compile(tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE), loss=mse)
 
 PATH_HDF5 = SHERPA_TEMP_DIR
 save_name = 'CI_Pos_temp'
@@ -431,8 +448,12 @@ mcp_save = ModelCheckpoint(PATH_HDF5+save_name+'.hdf5',save_best_only=True, moni
 
 Nep = EPOCHS
 model_pos.fit_generator(train_gen_pos, epochs=Nep, validation_data=valid_gen_pos,\
-              callbacks=[earlyStopping, mcp_save])
-              
+              callbacks=[client.keras_send_metrics(trial,
+                                                   objective_name='val_loss',
+                                                   context_names=['loss'])
+                              ])
+model.save(SHERPA_TEMP_DIR + str(trial.id))
+
 #inp = Input(shape=(178,)) ## input after rh and tns transformation
 #offset = 64
 #inp_TNS = inp[:,offset:offset+2*inter_dim_size+4]
